@@ -1,3 +1,13 @@
+# Example files
+*.xml
+*.geotiff
+
+# Sublime text project files
+*.sublime-workspace
+
+# IPython
+.ipynb_*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
