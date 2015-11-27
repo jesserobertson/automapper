@@ -16,13 +16,22 @@ import click
 @click.argument('filename', type=click.Path(exists=True), required=1)
 @click.option('--order', type=int, default=1,
               help="The order of the derivative to calculate")
-@click.option('--n_angles', type=int, default=1,
+@click.option('--nangles', type=int, default=1,
               help="The number of angles to calculate transforms for")
-@click.option('--n_scales', type=int, default=20,
+@click.option('--nscales', type=int, default=20,
               help="The number of scales to resolve in the transform")
-def make_wavelets(filename, order, n_angles, n_scales):
+@click.option('--sym', is_flag=True, default=False,
+              help="Whether to use a symmetric or asymmetric wavelet"
+                   " (default: asymmetric)")
+def make_wavelets(filename, order, nangles, nscales, sym):
     """ Make a wavelet transform from an HDF5 file
     """
+    # Set wavelet type
+    if sym:
+        wav = dgauss.dgauss_nd_sym
+    else:
+        wav = dgauss.dgauss_nd
+
     # Get info from input signal
     with h5py.File(filename) as src:
         spacing = (
@@ -32,9 +41,9 @@ def make_wavelets(filename, order, n_angles, n_scales):
         shape = (nxs, nys)
 
         # Generate axes for transform
-        scales = dgauss.generate_scales(n_scales, shape, spacing, order)
+        scales = dgauss.generate_scales(nscales, shape, spacing, order)
         angles = linspace(
-            0, 2 * pi * (1 - 1 / n_angles), n_angles)
+            0, pi * (1 - 1 / nangles), nangles)
         axes = [
             (0, 'Angle', angles),
             (1, 'Scale', scales),
@@ -71,14 +80,13 @@ def make_wavelets(filename, order, n_angles, n_scales):
             progbar = pyprind.ProgBar(len(angles) * len(scales) + 1)
             freqs = fft_frequencies(pad_shape, spacing)
             for aidx, angle in enumerate(angles):
-                rfreqs = rotate(freqs, (angles[0],))
+                rfreqs = rotate(freqs, (angle,))
                 for sidx, scale in enumerate(scales):
                     item = 'Angle: {0:0.2f} deg, Scale: {1:0.2f} deg'.format(
                         angle * 180 / pi, scale)
                     progbar.update(item_id=item)
                     filtered = ifftn(
-                        fft_data * dgauss.dgauss_nd(rfreqs, order=order,
-                                                    scale=scale))
+                        fft_data * wav(rfreqs, order=order, scale=scale))
                     sink['Raster'][aidx, sidx, ...] = filtered[pad_mask].real
 
 if __name__ == '__main__':

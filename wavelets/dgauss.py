@@ -9,14 +9,14 @@
 
 from __future__ import print_function, division
 
-from numpy import exp, sqrt, pi
+import numpy as np
 from scipy.special import gamma
 from functools import reduce
 
 from . import utilities
 
 
-def gaussian(freq, scale=1):
+def gaussian(freq, scale):
     """ Fourier representation for Gaussian function
 
         Parameters:
@@ -27,10 +27,10 @@ def gaussian(freq, scale=1):
             an array containing the fourier transfomr of the wavelet evaluated
                 at the given frequencies.
     """
-    return exp(-((scale * freq) ** 2) / 2.) / sqrt(gamma(0.5))
+    return np.exp(-((scale * freq) ** 2) / 2.) / np.sqrt(gamma(0.5))
 
 
-def dgauss(freq, scale=1, order=1):
+def dgauss(freq, scale, order):
     """ Fourier representation for the Derivative-of-Gaussian wavelet
 
         Parameters:
@@ -44,12 +44,12 @@ def dgauss(freq, scale=1, order=1):
             an array containing the fourier transfomr of the wavelet evaluated
                 at the given frequencies.
     """
-    return (-1j) ** order / sqrt(gamma(order + 0.5)) \
+    return (-1j) ** order / np.sqrt(gamma(order + 0.5)) \
            * (scale * freq) ** order \
-           * exp(-((scale * freq) ** 2) / 2.)
+           * np.exp(-((scale * freq) ** 2) / 2.)
 
 
-def dgauss_nd(freq, scale=1, order=1):
+def dgauss_nd(freq, scale, order):
     """ N-dimensional derivative of Gaussian wavelet
 
         Parameters:
@@ -69,13 +69,33 @@ def dgauss_nd(freq, scale=1, order=1):
                   dgauss(freq[-1], scale=scale, order=order))
 
 
-def scale_wavelength_ratio(order=1):
+def dgauss_nd_sym(freq, scale, order):
+    """ N-dimensional symmetrical derivative of Gaussian wavelet
+
+        Parameters:
+            freq - the frequencies at which to evaluate the transform
+            scale - the scale of the wavelet (in spacing units)
+            order - the order of the derivative. `order=0` corresponds to
+                Gaussian smoothing, `order=m` with m > 0 corresponds to a
+                smoothed m-th derivative.
+
+        Returns:
+            an array containing the fourier transfomr of the wavelet evaluated
+                at the given frequencies.
+    """
+    sym_freq = np.sqrt(np.sum(f ** 2 for f in freq))
+    return 1 / np.sqrt(gamma(order + 0.5)) \
+           * (scale * sym_freq) ** order \
+           * np.exp(-((scale * sym_freq) ** 2) / 2.)
+
+
+def scale_wavelength_ratio(order):
     """ Convert DOG scale parameter to equivalent Fourier wavelength
     """
-    return 2 * pi / sqrt(order + 0.5)
+    return 2 * np.pi / np.sqrt(order + 0.5)
 
 
-def generate_scales(n_scales, shape, spacing, order=1):
+def generate_scales(n_scales, shape, spacing, order):
     """ Generate scales for the Derivative-of-Gaussian wavelet
 
         This does the same thing as the utilities.generate_scales 
