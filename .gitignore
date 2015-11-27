@@ -1,6 +1,7 @@
 # Example files
 *.xml
 *.geotiff
+*.hdf5
 
 # Sublime text project files
 *.sublime-workspace
